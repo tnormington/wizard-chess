@@ -1,0 +1,79 @@
+
+.tile 
+  width: $tile-size
+  height: $tile-size
+  border: 1px solid darken($brown, 10)
+  box-shadow: 0 2px 4px rgba(black, 0.2)
+  transition: all 0.15s ease-out
+  cursor: pointer
+  backface-visibility: hidden
+  -webkit-font-smoothing: subpixel-antialiased
+  display: flex
+  align-items: center
+  justify-content: center
+  background-color: white
+  background-image: linear-gradient(to top, rgba(black, 0.1) 0%, rgba(black, 0) 50%)
+  // border-width: 10px
+  font-size: 0.75em
+  &.highlight 
+    border-color: $teal
+    border-width: 3px
+  
+  &.highlight-alt 
+    border-color: $orange
+  
+  &.highlight-warn 
+    border-color: $red
+  
+  &.active, &.active:hover 
+    border-color: $yellow
+    transform: scale(1.1) translateZ(0)
+    border-width: 6px
+  
+  &:hover 
+    box-shadow: 0 0 2px rgba(black, 0.15)
+    transform: scale(1.05)
+    border-color: $blue
+  
+
+
+
+
+.tile-menu 
+  position: absolute
+  z-index: 100
+  background-color: lighten($brown, 10)
+  padding: 0.25em
+  margin: 0
+  list-style-type: none
+  border: 1px solid darken($brown, 10)
+  box-shadow: 0 0 6px rgba(black, 0.25)
+  transition: all 0.15s ease-out
+  transform: scale(0.001)
+  -webkit-font-smoothing: subpixel-antialiased
+  &.active 
+    transform: scale(1) translateX(-50%) translateZ(0)
+  
+
+
+.tile-menu__option 
+  padding: 0
+  margin: 0
+  margin-bottom: 0.25em
+  border: 1px solid white
+  padding: 0.25em
+  text-align: center
+  background-color: white
+  box-shadow: 0 1px 2px rgba(black, 0.35)
+  transition: all 0.15s ease-out
+  cursor: pointer
+  backface-visibility: hidden
+  -webkit-font-smoothing: subpixel-antialiased
+  &:hover 
+    box-shadow: 0 0 0 rgba(black, 0)
+    transform: scale(1.05) translateZ(0)
+    border-color: $yellow
+  
+  &:last-child 
+    margin-bottom: 0
+  
