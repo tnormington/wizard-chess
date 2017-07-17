@@ -7,25 +7,44 @@ const Hand = {
   handCount: 0,
   data: [],
   
-  drawCard: function() {
+  drawCard: function(card) {
     // if the handCount is at max, break
     if(this.handCount >= this.max) return;
-    const unit = Units.getRandomUnit();
-    console.log(unit);
-    const cardInHand = this.addUnitToHand(unit);
+    console.log(card);
+    const cardInHand = this.addUnitToHand(card);
     
     // have to use an old fashioned function because lame-sauce
     cardInHand.addEventListener('dragstart', function(e) {
       Controller.handleCardDragStart(e);
     });
   },
+
+  drawRandomCard: function() {
+    const randomUnit = Units.getRandomUnit();
+
+
+    this.drawCard(randomUnit);
+
+
+
+  },
+
   
   addUnitToHand: function(unit) {
     const card =
-      `<div class="hand__card" id="${unit.content}" draggable="true">${unit.name}
+      `<div class="hand__card" id="${unit.content ? unit.content : ''}" draggable="true">${unit.name}
         <span class="hand__card__cost">
           ${unit.cost}
         </span>
+        ${ unit.health ? 
+        '<span class="hand__card__health">' + unit.health + '</span>' : 
+        ''
+        }
+        ${ unit.damage ? 
+          '<span class="hand__card__damage">' + 
+          unit.damage + '</span>' :
+          ''
+        }
       </div>`;
     const cardNode = View.stringToNode(card);
     const hand = document.querySelector('.hand');

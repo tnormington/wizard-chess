@@ -1,0 +1,25 @@
+#unit-menu 
+    position: absolute
+    bottom: -1.5em
+    z-index: 1000
+    background-color: white
+    padding: 0.5em
+    transform: translateY(100%)
+    transition: all 0.15s ease-out
+    box-shadow: 1px 1px 6px rgba(black, 0.35)
+    width: 100%
+    min-height: 60px
+    // pointer-events: none
+    // opacity: 0
+    ul 
+        display: grid
+        grid-template-columns: repeat(3, 33%)
+        grid-column-gap: 10px
+    &.active 
+        // pointer-events: fill
+        // opacity: 1
+        transform: translateY(0)
+        bottom: 0
+
+
+@import unit_menu_options

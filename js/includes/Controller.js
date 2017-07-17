@@ -1,25 +1,54 @@
-import Grid from './Grid.js';
 import View from './View.js';
-import Units from './Units.js';
-import Hand from './Hand.js';
+import Model from './Model.js';
+
+import postal from 'postal';
 
 const Controller = {
+
+  endTurn: function() {
+    Model.endTurn();
+  },
+
+  // takeTurn: new Promise((resolve, reject) => {
+  //   const activePlayer = Model.turnNumber % 2;
+
+  //   console.log('taking player turn');
+
+  //   if( 1 === 1 ) {
+  //     resolve('Turn promise resolved');
+  //     Controller.endTurn();
+  //   } else {
+  //     reject(Error('turn promise rejected'));
+  //   }
+
+  // }),
+
+
+  // endTurn: function() {
+  //   Model.turnNumber++;
+  //   Controller.takeTurn.then((result) => {
+  //     console.log(result);
+  //   }, (err) => {
+  //     console.log(err);
+  //   });
+  // },
   
   createGrid: function() {
-    Grid.clearGridArray();
+    Model.Grid.clearGridArray();
     View.removeAllTileMarkup();
-    for(let rowIndex = 0; rowIndex < Grid.rows; rowIndex++) {
+    for(let rowIndex = 0; rowIndex < Model.Grid.rows; rowIndex++) {
       // loop over each row
       let row = [];
-      for(let columnIndex = 0; columnIndex < Grid.columns; columnIndex++) {
+      for(let columnIndex = 0; columnIndex < Model.Grid.columns; columnIndex++) {
         // loop over each column
         let tile = {
           tileIndex: ('' + rowIndex) + columnIndex,
-          content: null
+          content: null,
+          unitId: null,
         };
         row.push(tile);
       }
-      Grid.data.push(row);
+      Model.Grid.data.push(row);
     }
     // console.table(grid);
     this.renderGrid();
@@ -28,25 +57,34 @@ const Controller = {
   updateTile: function(newTile) {
     const row = Number(newTile.tileIndex[0]);
     const column = Number(newTile.tileIndex[1]);
-    console.log('oldTile: ',Grid.data[row][column]);
-    console.log('newTile: ',newTile);
+    // console.log('oldTile: ',Grid.data[row][column]);
+    // console.log('newTile: ',newTile);
 
-    newTile.tileIndex = Grid.data[row][column].tileIndex;
+    newTile.tileIndex = Model.Grid.data[row][column].tileIndex;
 
     // console.log('TEST: ', newTile.tileIndex === grid[row][column].tileIndex);
-    Grid.data[row][column] = newTile;
+    Model.Grid.data[row][column] = newTile;
     this.renderGrid();
+
+    postal.publish({
+      channel: "playerAction",
+      topic: "grid.updateTile",
+      data: {
+        message: "tile updated",
+        tile: newTile
+      }
+    });
   },
   
   placeRandomUnit: function() {
-    const randomRow = Math.floor(Math.random() * Grid.rows);
-    const randomColumn = Math.floor(Math.random() * Grid.columns);
+    const randomRow = Math.floor(Math.random() * Model.Grid.rows);
+    const randomColumn = Math.floor(Math.random() * Model.Grid.columns);
 
     const tileIndex = String(('' + randomRow) + randomColumn);
 
     // console.log('random tileIndex: ', tileIndex);
 
-    const randomUnit = Units.getRandomUnit(tileIndex);
+    const randomUnit = Model.Units.getRandomUnit(tileIndex);
 
     // console.log(randomUnit);
 
@@ -56,12 +94,14 @@ const Controller = {
   },
   
   renderGrid: function() {
-    const gridMarkup = Grid.data.map(row => {
+    const gridMarkup = Model.Grid.data.map(row => {
       // loop over each row
       return row.map(tile => {
         // loop over each tile
         return (
-          `<div class="tile" data-index="${tile.tileIndex}">
+          `<div class="tile"
+            data-index="${tile.tileIndex}"
+            ${tile.unitId ? 'data-unit-id="' + tile.unitId  + '"' : '' }>
             ${tile.content ? tile.content : ''}
            </div>`
         );
@@ -75,9 +115,13 @@ const Controller = {
   handleTileClick: function(e) {
     // return if this is not a tile
     if(!e.target.classList.contains('tile')) return;
-    // console.log(e.target.offsetTop);
+    // return if this doesn't have a unit in it
+    if(e.target.dataset.unitId === undefined) return;
 
-    // console.dir(e.target);
+    
+    // get the unit being clicked
+    const unit = Model.Units.getUnitById(e.target.dataset.unitId);
+
     // destructure the event
     const {
       offsetLeft: tileX,
@@ -89,62 +133,48 @@ const Controller = {
     const x = tileX + tileW / 2;
     const y = tileY + tileH + 5;
 
+    const tileIndex = e.target.dataset.index;
 
-    const index = e.target.dataset.index;
+    View.renderUnitMenu(unit, tileIndex);
+    // const index = e.target.dataset.index;
 
 
-    const tile = Grid.getTile(index);
+    // const tile = Grid.getTile(index);
 
-    const body = document.querySelector('body');
-    const tileMenu = body.appendChild(View.renderTileMenu(x, y, tile));
+    // const body = document.querySelector('body');
+    // const tileMenu = body.appendChild(View.renderTileMenu(x, y, tile));
 
 
     // For entrance animation, add .active class after 10ms
-    setTimeout(() => {
-      tileMenu.className += ' active';
-    }, 10);
-    View.deactivateAllTiles();
-    e.target.className += ' active';
+    // setTimeout(() => {
+    //   tileMenu.className += ' active';
+    // }, 10);
+    // View.deactivateAllTiles();
+    // e.target.className += ' active';
 
   },
   
-//   handleTileMenuClick: function(e) {
-//     let t = null;
-//     if(e.target.classList.contains('tile-menu')) return;
-//     e.preventDefault();
-    
-//     console.dir(e.target);
-    
-//     if(e.target.nodeName === 'SPAN') {
-//       t = e.target.parentNode;
-//     } else {
-//       t = e.target;
-//     }
-    
-    
-    
-//     const id = t.dataset.id;
-//     const tileIndex = this.dataset.tileIndex;
+  handleUnitMenuClick: function(e) {
+    if(!e.target.classList.contains('unit-menu__option')) return;
+    const unit = Model.Units.getUnitById(e.target.parentNode.dataset.unitId);
+    const abilityFunction = e.target.dataset.abilityFunction;
 
-//     console.log(id);
-    
-//     console.log(this);
-//     console.dir(t);
-    
-//     const unit = Units.getUnitById(id);
-    
-    
-//     const newTile = {
-//       tileIndex: tileIndex,
-//       content: unit.name,
-//     };
-    
-    
+    const tileIndex = e.target.parentNode.dataset.tileIndex;
 
-//     View.clearTileMenu();
-//     View.deactivateAllTiles();
-//     Controller.updateTile(newTile);
-//   },
+    console.log(tileIndex);
+
+    unit.tileIndex = tileIndex;
+
+    console.log(abilityFunction);
+    console.log(unit);
+
+    const fn = Model.Units[abilityFunction];
+
+    
+    fn(unit);
+    // console.log(unit.);
+    // View.clearUnitMenu();
+  },
   
   handleHandDrag: function(e) {
     // console.log(e);
@@ -181,18 +211,28 @@ const Controller = {
     // get card id and remove from hand
     const id = e.dataTransfer.getData("text");
     const card = document.getElementById(id);
-    Hand.removeCardFromHand(card);
+    Model.Hand.removeCardFromHand(card);
     
     // update grid with new tile
-    const unit = Units.getUnitById(id);
+    const unit = Model.Units.getUnitById(id);
     
     
     const newTile = {
       content: unit.name,
-      tileIndex: tileIndex
+      tileIndex: tileIndex,
+      unitId: unit.id,
     };
     
     Controller.updateTile(newTile);
+
+    postal.publish({
+      channel: "playerAction",
+      topic: "hand.playedCard",
+      data: {
+        message: 'card placed: ' + newTile.content,
+        newTile: newTile
+      }
+    });
     
     console.log(tileIndex);
   },
@@ -207,6 +247,14 @@ const Controller = {
     if(tileIndex >= 40) {
       if(!e.target.classList.contains('highlight-alt')) {
         e.target.classList.add('highlight-alt');
+        postal.publish({
+          channel: "playerAction",
+          topic: "hand.hoverTile",
+          data: {
+            message: "tile hovered",
+            tile: e.target
+          }
+        });
       }
     } else {
       if(!e.target.classList.contains('highlight-warn')) {
@@ -242,6 +290,11 @@ const Controller = {
       e.dataTransfer.dropEffect = 'copy';
     }
   },
+
+  handleBodyDrop: function(e) {
+    console.log('body drop');
+    View.unHighlightAll();
+  }
   
   
   

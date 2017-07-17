@@ -1,8 +1,28 @@
-import Units from './Units.js';
 import Controller from './Controller.js';
-import Hand from './Hand.js';
+import Model from './Model.js';
 
 const View = {
+  body: document.getElementsByTagName('body'),
+  unitMenu: document.getElementById('unit-menu'),
+
+  renderUnitMenu: function(unit, tileIndex) {
+    if(unit.abilities) {
+      const abilities = unit.abilities.map( ability => {
+        return `<li 
+          class="unit-menu__option ability ${ability.name.toLowerCase().replace(' ', '-')}"
+          data-ability-function="${ability.function}">${ability.name}</li>`;
+      }).join('');
+      const list = this.stringToNode(`<ul data-unit-id="${unit.id}" data-tile-index="${tileIndex}">${abilities}</ul>`);
+      this.clearUnitMenu();
+      this.unitMenu.appendChild(list);
+      this.unitMenu.classList.add('active');
+    }
+  },
+
+  clearUnitMenu: function() {
+    this.unitMenu.innerHTML = '';
+    this.unitMenu.classList.remove('active');
+  },
   
   unHighlightAll: function(rowIndex) {
     const tiles = document.querySelectorAll('.tile');
@@ -33,45 +53,6 @@ const View = {
     }
   },
   
-//   renderTileMenu: function(x, y, tile) {
-//     this.clearTileMenu();
-
-//     const optionMarkup = this.createTileMenuOptions();
-
-//     const menuStyle = `style="top: ${y}px; left: ${x}px;"`;
-//     const menuMarkup = `<ul class="tile-menu" data-tile-index="${tile.tileIndex}" ${menuStyle}>${optionMarkup}</ul>`;
-
-//     // const div = document.createElement('div');
-//     // div.innerHTML = menuMarkup;
-//     const menu = this.stringToNode(menuMarkup);
-
-//     menu.addEventListener('click', Controller.handleTileMenuClick);
-//     return menu;
-//   },
-  
-//   createTileMenuOptions: function() {
-//     const options = Units.data.map(option => {
-
-//       // const hotkey = option.name.indexOf(option.id);
-//       // const optionName = '';
-//       // console.log(option.name);
-//       const optionNameArray = option.name.split('');
-//       const optionName = optionNameArray.map(letter => {
-//         // console.log(letter);
-//         if(letter === option.id) {
-//           return `<span class="keyword">${letter}</span>`;
-//         } else {
-//           return letter;
-//         }
-//       }).join('');
-
-//       return (
-//         `<li class="tile-menu__option" data-id="${option.id}">${optionName}</li>`
-//       );
-//     }).join('');
-
-//     return options;
-//   },
   
   stringToNode: function(string) {
     const div = document.createElement('div');
@@ -95,15 +76,6 @@ const View = {
     }
   },
   
-//   moveCardInHand: function(x, y, card) {
-//     // let transform = `translate(${x}, ${y})`;
-//     let top = x + 'px';
-//     let left = y + 'px';
-    
-//     card.classList.add('active');
-//     card.style.top = top;
-//     card.style.left = left;
-//   },
     
   setupHandlers: function() {
     window.handlers = {
@@ -114,18 +86,25 @@ const View = {
         Controller.createGrid();
       },
       drawCard: function() {
-        Hand.drawCard();
-      }
+        Model.Hand.drawRandomCard();
+      },
+      endTurn: function() {
+        Controller.endTurn();
+      },
+      closeUnitMenu: function() {
+        View.clearUnitMenu();
+      },
     };
     
     
-    // const body = document.querySelector('body');
     // body.addEventListener('mousedown', Controller.handleMouseDown);
     // body.addEventListener('mouseup', Controller.handleMouseUp);
     // body.addEventListener('drag', Controller.handleDrag);
+
+    // View.body.addEventListener('drop', Controller.handleBodyDrop);
     
     const gridContainer = document.getElementById('grid-container');
-    // gridContainer.addEventListener('click', Controller.handleTileClick);
+    gridContainer.addEventListener('click', Controller.handleTileClick);
     gridContainer.addEventListener('drop', Controller.handleGridDrop);
     gridContainer.addEventListener('dragover', Controller.handleGridDragOver);
     gridContainer.addEventListener('dragenter', Controller.handleGridDragEnter);
@@ -134,6 +113,10 @@ const View = {
     const hand = document.getElementById('hand');
     // hand.addEventListener('mousedown', Controller.handleHandMouseDown);
     hand.addEventListener('drag', Controller.handleHandDrag);
+
+
+    this.unitMenu.addEventListener('click', Controller.handleUnitMenuClick);
+
     // hand.addEventListener('mouseup', Controller.handleHandMouseUp);
     
     
